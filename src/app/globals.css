@@ -1,26 +1,218 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --npat-bg: #1a1714;
+  --npat-foreground: #f5f2ea;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-background: var(--npat-bg);
+  --color-foreground: var(--npat-foreground);
+  --font-sans: var(--font-nunito);
+  --font-display: var(--font-bebas);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--npat-bg);
+  color: var(--npat-foreground);
+  font-family: var(--font-nunito), system-ui, sans-serif;
+}
+
+@keyframes npat-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes npat-slide-up {
+  from {
+    transform: translateY(36px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes npat-slide-down {
+  from {
+    transform: translateY(-36px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes npat-photo-float {
+  0%,
+  100% {
+    transform: translateY(0) rotate(var(--npat-rot, 0deg)) scale(1);
+  }
+  50% {
+    transform: translateY(-7px) rotate(var(--npat-rot, 0deg)) scale(1.01);
+  }
+}
+
+@keyframes npat-letter-blast {
+  0% {
+    transform: scale(0.1);
+    opacity: 0;
+    filter: blur(40px);
+  }
+  55% {
+    transform: scale(1.12);
+    opacity: 1;
+    filter: blur(0);
+  }
+  75% {
+    transform: scale(0.97);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+    filter: blur(0);
+  }
+}
+
+@keyframes npat-count-pop {
+  0% {
+    transform: scale(2.8);
+    opacity: 0;
+  }
+  20% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  75% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+}
+
+@keyframes npat-confetti-fall {
+  0% {
+    transform: translateY(-5vh) rotate(0deg) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(105vh) rotate(800deg) scale(0.5);
+    opacity: 0;
+  }
+}
+
+@keyframes npat-winner-pop {
+  0% {
+    transform: scale(0) rotate(-6deg);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.07) rotate(1.5deg);
+    opacity: 1;
+  }
+  80% {
+    transform: scale(0.97) rotate(-0.5deg);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+}
+
+@keyframes npat-player-join {
+  from {
+    transform: translateX(-28px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes npat-dot-pulse {
+  0%,
+  100% {
+    opacity: 0.3;
+    transform: scale(0.7);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes npat-timer-warn {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
+}
+
+@keyframes npat-score-reveal {
+  from {
+    transform: scale(0.6) translateY(6px);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes npat-badge-pop {
+  0% {
+    transform: scale(0);
+  }
+  70% {
+    transform: scale(1.15);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes npat-host-banner {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Scrollbar — NPAT.html */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #1a1714;
+}
+::-webkit-scrollbar-thumb {
+  background: #3d3930;
+  border-radius: 3px;
 }

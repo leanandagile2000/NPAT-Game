@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NPAT — Name · Place · Animal · Thing</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet" />
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+    body { font-family: 'Nunito', sans-serif; background: #1A1714; color: #F5F2EA; overflow-x: hidden; }
+    input, button, select, textarea { font-family: inherit; }
+    ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: #1A1714; } ::-webkit-scrollbar-thumb { background: #3D3930; border-radius: 3px; }
+
+    @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
+    @keyframes slideUp { from { transform: translateY(36px); opacity: 0 } to { transform: translateY(0); opacity: 1 } }
+    @keyframes slideDown { from { transform: translateY(-36px); opacity: 0 } to { transform: translateY(0); opacity: 1 } }
+    @keyframes photoFloat {
+      0%, 100% { transform: translateY(0px) rotate(var(--rot,0deg)) scale(1); }
+      50% { transform: translateY(-7px) rotate(var(--rot,0deg)) scale(1.01); }
+    }
+    @keyframes letterBlast {
+      0% { transform: scale(0.1); opacity: 0; filter: blur(40px); }
+      55% { transform: scale(1.12); opacity: 1; filter: blur(0); }
+      75% { transform: scale(0.97); }
+      100% { transform: scale(1); opacity: 1; filter: blur(0); }
+    }
+    @keyframes countPop {
+      0% { transform: scale(2.8); opacity: 0; }
+      20% { transform: scale(1); opacity: 1; }
+      75% { transform: scale(1); opacity: 1; }
+      100% { transform: scale(0.4); opacity: 0; }
+    }
+    @keyframes confettiFall {
+      0% { transform: translateY(-5vh) rotate(0deg) scale(1); opacity: 1; }
+      100% { transform: translateY(105vh) rotate(800deg) scale(0.5); opacity: 0; }
+    }
+    @keyframes winnerPop {
+      0% { transform: scale(0) rotate(-6deg); opacity: 0; }
+      60% { transform: scale(1.07) rotate(1.5deg); opacity: 1; }
+      80% { transform: scale(0.97) rotate(-0.5deg); }
+      100% { transform: scale(1) rotate(0deg); opacity: 1; }
+    }
+    @keyframes playerJoin { from { transform: translateX(-28px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    @keyframes dotPulse { 0%, 100% { opacity: 0.3; transform: scale(0.7); } 50% { opacity: 1; transform: scale(1); } }
+    @keyframes shimmer {
+      0% { background-position: -200% center; }
+      100% { background-position: 200% center; }
+    }
+    @keyframes timerWarn { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+    @keyframes scoreReveal { from { transform: scale(0.6) translateY(6px); opacity: 0; } to { transform: scale(1) translateY(0); opacity: 1; } }
+    @keyframes badgePop { 0% { transform: scale(0); } 70% { transform: scale(1.15); } 100% { transform: scale(1); } }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useRef, useMemo, useCallback } = React;
+
+// ── TOKENS ──────────────────────────────────────────────────────────────────
+const C = {
+  bg: '#1A1714', card: '#252219', cardHover: '#2d2922',
+  border: 'rgba(255,255,255,0.07)',
+  yellow: '#FFD600', coral: '#FF5C39', teal: '#00C4A7', white: '#F5F2EA',
+  muted: '#8C8678', dark: '#3D3930', darkMid: '#2e2b23',
+};
+const CAT = { name: C.yellow, place: C.coral, animal: C.teal, thing: C.white };
+
+// ── SHARED COMPONENTS ────────────────────────────────────────────────────────
+function Btn({ children, onClick, variant = 'primary', size = 'md', disabled, full, style: sx }) {
+  const [hov, setHov] = useState(false);
+  const sz = { sm: '10px 20px', md: '13px 26px', lg: '16px 38px', xl: '20px 52px' }[size];
+  const fs = { sm: 14, md: 16, lg: 19, xl: 22 }[size];
+  const vs = {
+    primary: { bg: C.yellow, color: '#1A1714', hbg: '#FFE033' },
+    coral:   { bg: C.coral,  color: C.white,   hbg: '#FF6E50' },
+    teal:    { bg: C.teal,   color: '#1A1714',  hbg: '#00D4B5' },
+    ghost:   { bg: 'transparent', color: C.white, hbg: 'rgba(255,255,255,0.06)', border: `1.5px solid ${C.border}` },
+    danger:  { bg: 'rgba(255,92,57,0.12)', color: C.coral, hbg: 'rgba(255,92,57,0.2)', border: '1px solid rgba(255,92,57,0.25)' },
+    dark:    { bg: C.card, color: C.white, hbg: C.cardHover, border: `1px solid ${C.border}` },
+  }[variant];
+  return (
+    <button onClick={disabled ? undefined : onClick}
+      onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
+      style={{ fontFamily: 'inherit', fontWeight: 800, fontSize: fs, borderRadius: 13, border: vs.border || 'none',
+        padding: sz, background: hov && !disabled ? vs.hbg : vs.bg, color: vs.color,
+        cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.38 : 1,
+        transition: 'all 0.14s ease', width: full ? '100%' : undefined,
+        transform: hov && !disabled ? 'translateY(-2px)' : 'none',
+        boxShadow: hov && !disabled ? '0 8px 28px rgba(0,0,0,0.45)' : 'none',
+        display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+        ...sx }}>
+      {children}
+    </button>
+  );
+}
+
+function FieldInput({ label, color, value, onChange, placeholder, disabled }) {
+  const [foc, setFoc] = useState(false);
+  return (
+    <div>
+      <label style={{ display: 'block', fontSize: 11, fontWeight: 800, color, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 7 }}>
+        {label}
+      </label>
+      <input value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder} disabled={disabled}
+        onFocus={() => setFoc(true)} onBlur={() => setFoc(false)}
+        style={{ width: '100%', background: foc ? C.darkMid : '#1f1d17', border: `2px solid ${foc ? color : (value ? color + '50' : C.dark)}`,
+          borderRadius: 12, padding: '13px 16px', color: C.white, fontSize: 16, fontFamily: 'inherit', outline: 'none',
+          transition: 'all 0.15s', opacity: disabled ? 0.55 : 1 }} />
+    </div>
+  );
+}
+
+function FormInput({ label, value, onChange, placeholder, large }) {
+  const [foc, setFoc] = useState(false);
+  return (
+    <div>
+      <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: C.muted, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 8 }}>{label}</label>
+      <input value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
+        onFocus={() => setFoc(true)} onBlur={() => setFoc(false)}
+        style={{ width: '100%', background: '#1A1714', border: `1.5px solid ${foc ? C.yellow : C.dark}`,
+          borderRadius: 12, padding: large ? '16px 20px' : '13px 16px',
+          color: large ? C.yellow : C.white, fontSize: large ? 32 : 16,
+          fontFamily: large ? '"Bebas Neue"' : 'inherit', letterSpacing: large ? '0.2em' : undefined,
+          textAlign: large ? 'center' : undefined, outline: 'none', transition: 'border-color 0.15s', fontWeight: large ? undefined : 700 }} />
+    </div>
+  );
+}
+
+function BackBtn({ navigate, to = 'home' }) {
+  const [hov, setHov] = useState(false);
+  return (
+    <button onClick={() => navigate(to)}
+      onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
+      style={{ position: 'absolute', top: 20, left: 20, zIndex: 10,
+        background: 'rgba(37,34,25,0.85)', border: `1px solid ${C.border}`,
+        borderRadius: 10, padding: '8px 16px', color: hov ? C.white : C.muted,
+        cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700, fontSize: 14,
+        backdropFilter: 'blur(12px)', transition: 'color 0.15s', display: 'flex', alignItems: 'center', gap: 6 }}>
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>
+      Back
+    </button>
+  );
+}
+
+// ── PHOTO COLLAGE ────────────────────────────────────────────────────────────
+const PHOTOS = [
+  { id: '1546182990-dffeafbe841d', rot: -3 },
+  { id: '1587300003388-59208cc962cb', rot: 2.5 },
+  { id: '1564760055775-d63b17a55c44', rot: -4 },
+  { id: '1547721064-da6cfb341d50', rot: 3.5 },
+  { id: '1502602898657-3e91760cbb34', rot: -2 },
+  { id: '1524492412937-b28074a5d7da', rot: 2 },
+  { id: '1552832230-c0197dd311b5', rot: -3.5 },
+  { id: '1485738422979-f5c462d49f74', rot: 1.5 },
+  { id: '1534567153574-2b12153a87f0', rot: -1.5 },
+  { id: '1551986782-d0169b3f8fa7', rot: 4 },
+  { id: '1474511320723-9a56873867b5', rot: -3 },
+  { id: '1501594907352-04cda38ebc29', rot: 2 },
+  { id: '1472214103451-9374bd1c798e', rot: -4 },
+  { id: '1507003211169-0a1dd7228f2d', rot: 3 },
+  { id: '1447752875215-b2761acb3c5d', rot: -2.5 },
+  { id: '1416879595882-3373a0480b5b', rot: 1 },
+  { id: '1524661135-423995f22d0b', rot: -3 },
+  { id: '1441974231531-c6227db76b6e', rot: 2.5 },
+];
+
+// ── HOME ─────────────────────────────────────────────────────────────────────
+function HomeScreen({ navigate }) {
+  const actions = [
+    { label: 'How to Play', screen: 'rules', color: C.teal, icon: <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg> },
+    { label: 'Set Up New Game', screen: 'create', color: C.yellow, icon: <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg> },
+    { label: 'Join Existing Game', screen: 'join', color: C.coral, icon: <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg> },
+  ];
+  return (
+    <div style={{ minHeight: '100vh', position: 'relative', overflow: 'hidden' }}>
+      {/* Collage */}
+      <div style={{ position: 'absolute', inset: 0, display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gridTemplateRows: 'repeat(3, 1fr)', gap: 5, padding: 5 }}>
+        {PHOTOS.map((p, i) => (
+          <div key={p.id} style={{ overflow: 'hidden', borderRadius: 9,
+            '--rot': `${p.rot}deg`,
+            animation: `photoFloat ${3.2 + (i % 5) * 0.45}s ease-in-out ${i * 0.18}s infinite` }}>
+            <img src={`https://images.unsplash.com/photo-${p.id}?w=300&h=220&fit=crop&auto=format`} alt="" loading="lazy"
+              style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+          </div>
+        ))}
+      </div>
+      {/* Gradient */}
+      <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(26,23,20,0.25) 0%, rgba(26,23,20,0.55) 30%, rgba(26,23,20,0.92) 58%, #1A1714 80%)' }} />
+      {/* Content */}
+      <div style={{ position: 'relative', zIndex: 2, minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', padding: '40px 24px 72px' }}>
+        <div style={{ textAlign: 'center', marginBottom: 52, animation: 'slideDown 0.7s ease' }}>
+          <h1 style={{ fontFamily: '"Bebas Neue"', fontSize: 'clamp(34px, 7.5vw, 92px)', letterSpacing: '0.07em', lineHeight: 1, textShadow: '0 4px 48px rgba(0,0,0,0.85)' }}>
+            <span style={{ color: C.yellow }}>NAME</span>
+            <span style={{ color: 'rgba(245,242,234,0.35)', margin: '0 clamp(5px,1.2vw,18px)' }}>·</span>
+            <span style={{ color: C.coral }}>PLACE</span>
+            <span style={{ color: 'rgba(245,242,234,0.35)', margin: '0 clamp(5px,1.2vw,18px)' }}>·</span>
+            <span style={{ color: C.teal }}>ANIMAL</span>
+            <span style={{ color: 'rgba(245,242,234,0.35)', margin: '0 clamp(5px,1.2vw,18px)' }}>·</span>
+            <span style={{ color: C.white }}>THING</span>
+          </h1>
+          <p style={{ color: 'rgba(245,242,234,0.5)', fontSize: 17, marginTop: 10, fontWeight: 700, letterSpacing: '0.02em' }}>
+            The classic word game — multiplayer, online, real-time
+          </p>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(195px, 1fr))', gap: 14, width: '100%', maxWidth: 860, animation: 'slideUp 0.7s ease 0.18s both' }}>
+          {actions.map(a => <HomeCard key={a.screen} {...a} navigate={navigate} />)}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function HomeCard({ label, screen, color, icon, navigate }) {
+  const [hov, setHov] = useState(false);
+  return (
+    <button onClick={() => navigate(screen)}
+      onMouseEnter={() => setHov(true)} onMouseLeave={() => setHov(false)}
+      style={{ background: hov ? 'rgba(40,37,28,0.97)' : 'rgba(37,34,25,0.85)', backdropFilter: 'blur(14px)',
+        border: `2px solid ${hov ? color : 'rgba(255,255,255,0.07)'}`, borderRadius: 20,
+        padding: '30px 20px 26px', color: C.white, cursor: 'pointer',
+        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14,
+        transition: 'all 0.2s ease', transform: hov ? 'translateY(-7px)' : 'none',
+        boxShadow: hov ? `0 16px 48px rgba(0,0,0,0.55), 0 0 0 1px ${color}25` : 'none' }}>
+      <span style={{ color: hov ? color : 'rgba(245,242,234,0.75)', transition: 'color 0.2s' }}>{icon}</span>
+      <span style={{ fontWeight: 800, fontSize: 17, textAlign: 'center' }}>{label}</span>
+    </button>
+  );
+}
+
+// ── RULES ─────────────────────────────────────────────────────────────────────
+function RulesScreen({ navigate }) {
+  const steps = [
+    { n: '01', color: C.yellow, title: 'A random letter is picked', body: 'Each round, the game draws one letter from A–Z. No letter repeats until all 26 have been used, then a new cycle begins.' },
+    { n: '02', color: C.coral,  title: 'Type four answers', body: 'Fill in a Name, Place, Animal, and Thing — all beginning with that letter. You have a limited time (1–5 minutes).' },
+    { n: '03', color: C.teal,   title: 'Answers are validated', body: 'Names checked against a curated list. Places via GeoNames. Animals from a dataset. Things must be common English nouns.' },
+    { n: '04', color: C.white,  title: 'Score & repeat', body: '1 point per valid answer. Scores show as round + cumulative = total. Host can end anytime; only completed rounds count.' },
+  ];
+  const cats = [
+    { label: 'Name',   color: C.yellow, eg: 'Alice, Bob, Carlos…',        note: 'Any first name from the curated list (case-insensitive)' },
+    { label: 'Place',  color: C.coral,  eg: 'Australia, Berlin, Cairo…',   note: 'Countries, cities, regions — verified via GeoNames API' },
+    { label: 'Animal', color: C.teal,   eg: 'Aardvark, Bear, Crane…',      note: 'Any animal from the bundled animal dataset' },
+    { label: 'Thing',  color: C.white,  eg: 'Apple, Bottle, Chair…',       note: 'Common English nouns only — no brand names or proper nouns' },
+  ];
+  return (
+    <div style={{ minHeight: '100vh', padding: '80px 24px 72px', maxWidth: 820, margin: '0 auto', animation: 'fadeIn 0.35s ease' }}>
+      <BackBtn navigate={navigate} />
+      <h2 style={{ fontFamily: '"Bebas Neue"', fontSize: 56, letterSpacing: '0.05em', marginBottom: 6 }}>How to Play</h2>
+      <p style={{ color: C.muted, fontSize: 17, marginBottom: 48, fontWeight: 600 }}>Simple rules. Fast rounds. Fierce competition.</p>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 13, marginBottom: 52 }}>
+        {steps.map((s, i) => (
+          <div key={s.n} style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 16, padding: '20px 24px', display: 'flex', gap: 20, alignItems: 'flex-start', animation: `slideUp 0.4s ease ${i * 0.07}s both` }}>
+            <span style={{ fontFamily: '"Bebas Neue"', fontSize: 52, color: s.color, lineHeight: 1, minWidth: 56 }}>{s.n}</span>
+            <div style={{ paddingTop: 4 }}>
+              <div style={{ fontWeight: 800, fontSize: 18, marginBottom: 5 }}>{s.title}</div>
+              <div style={{ color: C.muted, fontSize: 15, lineHeight: 1.65 }}>{s.body}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+      <h3 style={{ fontFamily: '"Bebas Neue"', fontSize: 38, letterSpacing: '0.05em', marginBottom: 18 }}>The Four Categories</h3>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(178px, 1fr))', gap: 12, marginBottom: 52 }}>
+        {cats.map(c => (
+          <div key={c.label} style={{ background: C.card, borderRadius: 14, padding: '18px 20px', border: `1px solid ${c.color}30` }}>
+            <div style={{ fontFamily: '"Bebas Neue"', fontSize: 30, color: c.color, letterSpacing: '0.05em', marginBottom: 4 }}>{c.label}</div>
+            <div style={{ fontSize: 13, color: C.muted, marginBottom: 8, fontStyle: 'italic' }}>{c.eg}</div>
+            <div style={{ fontSize: 13.5, color: C.white, lineHeight: 1.55, opacity: 0.8 }}>{c.note}</div>
+          </div>
+        ))}
+      </div>
+      <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center' }}>
+        <Btn onClick={() => navigate('create')} variant="primary" size="lg">Set Up a Game</Btn>
+        <Btn onClick={() => navigate('join')} variant="ghost" size="lg">Join a Game</Btn>
+      </div>
+    </div>
+  );
+}
+
+// ── CREATE GAME ───────────────────────────────────────────────────────────────
+function CreateGameScreen({ navigate, setGame }) {
+  const [name, setName] = useState('');
+  const [host, setHost] = useState('');
+  const [dur, setDur] = useState(2);
+  const [done, setDone] = useState(false);
+  const code = useMemo(() => Math.random().toString(36).slice(2, 8).toUpperCase(), []);
+  const [copied, setCopied] = useState(false);
+
+  function create() {
+    if (!name.trim() || !host.trim()) return;
+    setGame({ gameName: name.trim(), hostName: host.trim(), duration: dur, code });
+    setDone(true);
+  }
+  function copy() {
+    navigator.clipboard.writeText(`npat.game/join/${code.toLowerCase()}`).catch(() => {});
+    setCopied(true); setTimeout(() => setCopied(false), 2000);
+  }
+
+  if (done) return (
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+      <BackBtn navigate={navigate} />
+      <div style={{ maxWidth: 500, width: '100%', textAlign: 'center', animation: 'slideUp 0.5s ease' }}>
+        <div style={{ width: 72, height: 72, background: 'rgba(255,214,0,0.12)', border: `2px solid ${C.yellow}40`, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 20px', animation: 'badgePop 0.5s ease' }}>
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke={C.yellow} strokeWidth="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+        </div>
+        <h2 style={{ fontFamily: '"Bebas Neue"', fontSize: 52, marginBottom: 6, letterSpacing: '0.04em' }}>Game Created!</h2>
+        <p style={{ color: C.muted, marginBottom: 32, fontSize: 16 }}>Share this code with your friends to let them join</p>
+        <div style={{ background: C.card, border: `2px solid ${C.yellow}50`, borderRadius: 20, padding: '24px 32px', marginBottom: 20 }}>
+          <div style={{ fontSize: 12, color: C.muted, fontWeight: 700, letterSpacing: '0.1em', marginBottom: 8 }}>GAME CODE</div>
+          <div style={{ fontFamily: '"Bebas Neue"', fontSize: 80, color: C.yellow, letterSpacing: '0.2em', lineHeight: 1 }}>{code}</div>
+          <div style={{ marginTop: 10, fontSize: 14, color: C.muted }}>npat.game/join/{code.toLowerCase()}</div>
+        </div>
+        <div style={{ display: 'flex', gap: 10, marginBottom: 12 }}>
+          <button onClick={copy} style={{ flex: 1, background: copied ? 'rgba(0,196,167,0.15)' : 'rgba(255,214,0,0.1)', border: `1px solid ${copied ? C.teal + '50' : C.yellow + '40'}`, borderRadius: 12, padding: '12px', color: copied ? C.teal : C.yellow, fontFamily: 'inherit', fontWeight: 700, fontSize: 15, cursor: 'pointer', transition: 'all 0.2s' }}>
+            {copied ? '✓ Copied!' : 'Copy link'}
+          </button>
+        </div>
+        <Btn onClick={() => navigate('lobby-host')} variant="primary" size="lg" full>Go to Lobby →</Btn>
+      </div>
+    </div>
+  );
+
+  return (
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+      <BackBtn navigate={navigate} />
+      <div style={{ maxWidth: 480, width: '100%', animation: 'slideUp 0.5s ease' }}>
+        <h2 style={{ fontFamily: '"Bebas Neue"', fontSize: 54, letterSpacing: '0.04em', marginBottom: 6 }}>Set Up a Game</h2>
+        <p style={{ color: C.muted, marginBottom: 36, fontSize: 16, fontWeight: 600 }}>You'll be the host — share the code and start when ready.</p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+          <FormInput label="Game Name" value={name} onChange={setName} placeholder="e.g. Friday Night NPAT" />
+          <FormInput label="Your Name (Host)" value={host} onChange={setHost} placeholder="e.g. Alex" />
+          <div>
+            <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: C.muted, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 10 }}>Round Duration</label>
+            <div style={{ background: '#1A1714', border: `1.5px solid ${C.dark}`, borderRadius: 13, padding: '18px 20px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+                <span style={{ color: C.muted, fontSize: 15, fontWeight: 600 }}>Time per round</span>
+                <span style={{ fontFamily: '"Bebas Neue"', fontSize: 40, color: C.yellow, lineHeight: 1 }}>
+                  {dur}<span style={{ fontSize: 18, color: C.muted }}> min</span>
+                </span>
+              </div>
+              <input type="range" min={1} max={5} step={1} value={dur} onChange={e => setDur(+e.target.value)}
+                style={{ width: '100%', accentColor: C.yellow, cursor: 'pointer', height: 5 }} />
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: C.dark, marginTop: 6, fontWeight: 700 }}>
+                {[1,2,3,4,5].map(v => <span key={v} style={{ color: v === dur ? C.yellow : C.dark }}>{v}m</span>)}
+              </div>
+            </div>
+          </div>
+          <Btn onClick={create} variant="primary" size="lg" full disabled={!name.trim() || !host.trim()} sx={{ marginTop: 6 }}>
+            Create Game →
+          </Btn>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── JOIN GAME ─────────────────────────────────────────────────────────────────
+function JoinGameScreen({ navigate }) {
+  const [code, setCode] = useState('');
+  const [name, setName] = useState('');
+  return (
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+      <BackBtn navigate={navigate} />
+      <div style={{ maxWidth: 440, width: '100%', animation: 'slideUp 0.5s ease' }}>
+        <h2 style={{ fontFamily: '"Bebas Neue"', fontSize: 54, letterSpacing: '0.04em', marginBottom: 6 }}>Join a Game</h2>
+        <p style={{ color: C.muted, marginBottom: 36, fontSize: 16, fontWeight: 600 }}>Enter the code shared by your host.</p>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+          <FormInput label="Game Code" value={code} onChange={v => setCode(v.toUpperCase().slice(0,6))} placeholder="ABC123" large />
+          <FormInput label="Your Name" value={name} onChange={setName} placeholder="e.g. Jordan" />
+          <Btn onClick={() => navigate('lobby-player')} variant="coral" size="lg" full disabled={code.length < 4 || !name.trim()}>
+            Join Game →
+          </Btn>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── LOBBY ─────────────────────────────────────────────────────────────────────
+const JOINING = ['Jordan', 'Sam', 'Riley', 'Casey'];
+
+function LobbyScreen({ navigate, game, isHost }) {
+  const gn = game?.gameName || 'Friday Night NPAT';
+  const hn = game?.hostName || 'Alex';
+  const code = game?.code || 'XB4K2F';
+  const [players, setPlayers] = useState([{ id: 1, name: hn, isHost: true }]);
+  const [jIdx, setJIdx] = useState(0);
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    if (!isHost) {
+      setPlayers([{ id: 1, name: hn, isHost: true }, { id: 2, name: 'Jordan', isHost: false }, { id: 3, name: 'You', isHost: false }]);
+      return;
+    }
+    const iv = setInterval(() => {
+      setJIdx(i => {
+        if (i >= JOINING.length) { clearInterval(iv); return i; }
+        setPlayers(p => [...p, { id: i + 2, name: JOINING[i], isHost: false }]);
+        return i + 1;
+      });
+    }, 2000);
+    return () => clearInterval(iv);
+  }, [isHost, hn]);
+
+  function copy() {
+    navigator.clipboard.writeText(`npat.game/join/${code.toLowerCase()}`).catch(() => {});
+    setCopied(true); setTimeout(() => setCopied(false), 2200);
+  }
+
+  const canStart = players.length >= 2;
+
+  return (
+    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '80px 24px 40px' }}>
+      <BackBtn navigate={navigate} />
+      <div style={{ maxWidth: 540, width: '100%', animation: 'fadeIn 0.4s ease' }}>
+        <div style={{ textAlign: 'center', marginBottom: 32 }}>
+          <div style={{ fontSize: 12, color: isHost ? C.yellow : C.teal, fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 6 }}>
+            {isHost ? 'You are the Host' : 'Waiting for host to start…'}
+          </div>
+          <h2 style={{ fontFamily: '"Bebas Neue"', fontSize: 46, letterSpacing: '0.04em' }}>{gn}</h2>
+        </div>
+
+        {/* Code card */}
+        <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 16, padding: '16px 20px', marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
+          <div>
+            <div style={{ fontSize: 11, color: C.muted, fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 4 }}>Join Code</div>
+            <div style={{ fontFamily: '"Bebas Neue"', fontSize: 44, color: C.yellow, letterSpacing: '0.15em', lineHeight: 1 }}>{code}</div>
+          </div>
+          <button onClick={copy} style={{ background: copied ? 'rgba(0,196,167,0.15)' : 'rgba(255,214,0,0.1)', border: `1px solid ${copied ? C.teal + '50' : C.yellow + '40'}`, borderRadius: 10, padding: '10px 18px', color: copied ? C.teal : C.yellow, fontFamily: 'inherit', fontWeight: 700, fontSize: 14, cursor: 'pointer', transition: 'all 0.2s', whiteSpace: 'nowrap' }}>
+            {copied ? '✓ Copied' : 'Copy Link'}
+          </button>
+        </div>
+
+        {/* Player list */}
+        <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 16, overflow: 'hidden', marginBottom: 18 }}>
+          <div style={{ padding: '13px 20px', borderBottom: `1px solid ${C.border}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontWeight: 800, fontSize: 14, color: C.muted, letterSpacing: '0.05em', textTransform: 'uppercase' }}>Players</span>
+            <span style={{ fontFamily: '"Bebas Neue"', fontSize: 22, color: canStart ? C.teal : C.muted }}>{players.length} / 8</span>
+          </div>
+          {players.map((p, i) => (
+            <div key={p.id} style={{ padding: '13px 20px', borderBottom: i < players.length - 1 ? `1px solid ${C.border}` : 'none', display: 'flex', alignItems: 'center', gap: 12, animation: `playerJoin 0.35s ease both`, background: (!isHost && p.name === 'You') ? 'rgba(255,214,0,0.04)' : 'transparent' }}>
+              <div style={{ width: 38, height: 38, borderRadius: '50%', background: p.isHost ? `linear-gradient(135deg,${C.yellow},${C.coral})` : C.dark, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, fontSize: 16, color: p.isHost ? '#1A1714' : C.white, flexShrink: 0 }}>
+                {p.name[0]}
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: 800, fontSize: 16 }}>{p.name} {(!isHost && p.name === 'You') ? <span style={{ color: C.muted, fontWeight: 600, fontSize: 14 }}>(you)</span> : ''}</div>
+                {p.isHost && <div style={{ fontSize: 11, color: C.yellow, fontWeight: 800, letterSpacing: '0.08em' }}>HOST</div>}
+              </div>
+              <div style={{ width: 8, height: 8, borderRadius: '50%', background: C.teal }} />
+            </div>
+          ))}
+          {isHost && players.length < 8 && (
+            <div style={{ padding: '13px 20px', display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{ width: 38, height: 38, borderRadius: '50%', border: `2px dashed ${C.dark}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <span style={{ color: C.dark, fontSize: 22, lineHeight: 1 }}>+</span>
+              </div>
+              <span style={{ color: C.muted, fontSize: 15, fontWeight: 600 }}>Waiting for players…</span>
+            </div>
+          )}
+        </div>
+
+        {isHost ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {!canStart && <p style={{ textAlign: 'center', color: C.muted, fontSize: 14, fontWeight: 600 }}>Need at least 2 players to start</p>}
+            <Btn onClick={() => navigate('round')} variant="primary" size="lg" full disabled={!canStart}>Start Game →</Btn>
+            <Btn onClick={() => navigate('home')} variant="danger" full>Cancel Game</Btn>
+          </div>
+        ) : (
+          <div style={{ textAlign: 'center', padding: '12px 0' }}>
+            <p style={{ color: C.muted, fontSize: 15, fontWeight: 600, marginBottom: 14 }}>Waiting for <strong style={{ color: C.white }}>{hn}</strong> to start…</p>
+            <div style={{ display: 'flex', justifyContent: 'center', gap: 7 }}>
+              {[0,1,2].map(i => <div key={i} style={{ width: 9, height: 9, borderRadius: '50%', background: C.yellow, animation: `dotPulse 1.4s ease ${i * 0.35}s infinite` }} />)}
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── IN-ROUND ──────────────────────────────────────────────────────────────────
+const ROUND_LETTER = 'B';
+const ROUND_NUM = 1;
+
+function InRoundScreen({ navigate, game }) {
+  const total = (game?.duration || 2) * 60;
+  const [phase, setPhase] = useState('reveal'); // reveal | countdown | playing | done
+  const [count, setCount] = useState(3);
+  const [time, setTime] = useState(total);
+  const [ans, setAns] = useState({ name: '', place: '', animal: '', thing: '' });
+  const [submitted, setSubmitted] = useState(false);
+
+  useEffect(() => {
+    const t = setTimeout(() => { setPhase('countdown'); setCount(3); }, 1600);
+    return () => clearTimeout(t);
+  }, []);
+
+  useEffect(() => {
+    if (phase !== 'countdown') return;
+    let n = 3;
+    const iv = setInterval(() => {
+      n--;
+      if (n <= 0) { clearInterval(iv); setPhase('playing'); return; }
+      setCount(n);
+    }, 950);
+    return () => clearInterval(iv);
+  }, [phase]);
+
+  useEffect(() => {
+    if (phase !== 'playing' || submitted) return;
+    const iv = setInterval(() => {
+      setTime(t => { if (t <= 1) { clearInterval(iv); setPhase('done'); setSubmitted(true); return 0; } return t - 1; });
+    }, 1000);
+    return () => clearInterval(iv);
+  }, [phase, submitted]);
+
+  const progress = time / total;
+  const mins = Math.floor(time / 60);
+  const secs = time % 60;
+  const warn = time <= 30 && time > 0;
+  const R = 50, CIRC = 2 * Math.PI * R;
+
+  const fields = [
+    { key: 'name',   label: 'Name',   color: C.yellow, ph: `A first name starting with ${ROUND_LETTER}…` },
+    { key: 'place',  label: 'Place',  color: C.coral,  ph: `A country, city, or region…` },
+    { key: 'animal', label: 'Animal', color: C.teal,   ph: `An animal starting with ${ROUND_LETTER}…` },
+    { key: 'thing',  label: 'Thing',  color: C.white,  ph: `A common noun starting with ${ROUND_LETTER}…` },
+  ];
+
+  return (
+    <div style={{ minHeight: '100vh', position: 'relative', overflow: 'hidden' }}>
+      {/* Overlay: reveal / countdown */}
+      {(phase === 'reveal' || phase === 'countdown') && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 100, background: '#1A1714', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+          {phase === 'reveal' && (
+            <>
+              <div style={{ color: C.muted, fontSize: 14, fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 12, animation: 'fadeIn 0.4s ease' }}>
+                Round {ROUND_NUM} · The letter is…
+              </div>
+              <div style={{ fontFamily: '"Bebas Neue"', fontSize: 'clamp(160px, 28vw, 300px)', color: C.yellow, lineHeight: 0.9, animation: 'letterBlast 0.75s cubic-bezier(0.34,1.56,0.64,1)', textShadow: `0 0 100px ${C.yellow}70, 0 0 200px ${C.yellow}30` }}>
+                {ROUND_LETTER}
+              </div>
+              <div style={{ marginTop: 24, display: 'flex', gap: 16, animation: 'fadeIn 0.4s ease 0.5s both' }}>
+                {['Name','Place','Animal','Thing'].map((l, i) => (
+                  <span key={l} style={{ fontFamily: '"Bebas Neue"', fontSize: 22, color: [C.yellow,C.coral,C.teal,C.white][i], letterSpacing: '0.06em', opacity: 0.8 }}>{l}</span>
+                ))}
+              </div>
+            </>
+          )}
+          {phase === 'countdown' && (
+            <div key={count} style={{ fontFamily: '"Bebas Neue"', fontSize: 'clamp(180px,35vw,340px)', color: C.white, lineHeight: 1, animation: 'countPop 0.95s ease', textShadow: '0 0 80px rgba(255,255,255,0.2)' }}>
+              {count}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Game UI */}
+      <div style={{ minHeight: '100vh', maxWidth: 660, margin: '0 auto', padding: '20px 24px 48px', display: 'flex', flexDirection: 'column', opacity: phase === 'playing' || phase === 'done' ? 1 : 0, transition: 'opacity 0.5s ease' }}>
+        {/* Header row */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
+          <div>
+            <div style={{ fontSize: 11, color: C.muted, fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 3 }}>Round {ROUND_NUM}</div>
+            <div style={{ fontFamily: '"Bebas Neue"', fontSize: 30, color: C.muted, letterSpacing: '0.06em' }}>{game?.gameName || 'Friday Night NPAT'}</div>
+          </div>
+          {/* SVG Timer */}
+          <div style={{ position: 'relative', width: 116, height: 116, flexShrink: 0 }}>
+            <svg width="116" height="116" viewBox="0 0 116 116">
+              <circle cx="58" cy="58" r={R} fill="none" stroke={C.dark} strokeWidth="6" />
+              <circle cx="58" cy="58" r={R} fill="none" stroke={warn ? C.coral : C.teal} strokeWidth="6"
+                strokeDasharray={CIRC} strokeDashoffset={CIRC * (1 - progress)}
+                strokeLinecap="round" transform="rotate(-90 58 58)"
+                style={{ transition: 'stroke-dashoffset 1s linear, stroke 0.4s ease' }} />
+            </svg>
+            <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: '"Bebas Neue"', fontSize: warn ? 24 : 21, color: warn ? C.coral : C.white, animation: warn && time > 0 ? 'timerWarn 0.7s ease infinite' : 'none', letterSpacing: '0.02em' }}>
+              {mins}:{String(secs).padStart(2,'0')}
+            </div>
+          </div>
+        </div>
+
+        {/* Letter */}
+        <div style={{ textAlign: 'center', marginBottom: 24 }}>
+          <span style={{ fontFamily: '"Bebas Neue"', fontSize: 'clamp(72px,14vw,130px)', color: C.yellow, lineHeight: 0.95, textShadow: `0 0 60px ${C.yellow}35` }}>{ROUND_LETTER}</span>
+        </div>
+
+        {/* Fields */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14, flex: 1 }}>
+          {fields.map(f => (
+            <FieldInput key={f.key} label={f.label} color={f.color} value={ans[f.key]}
+              onChange={v => setAns(a => ({ ...a, [f.key]: v }))} placeholder={f.ph} disabled={submitted} />
+          ))}
+        </div>
+
+        <div style={{ marginTop: 24 }}>
+          {phase === 'done' ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, alignItems: 'center' }}>
+              <p style={{ color: C.muted, fontWeight: 700, fontSize: 15 }}>
+                {time === 0 ? "Time's up — answers locked!" : 'Submitted! Waiting for others…'}
+              </p>
+              <Btn onClick={() => navigate('results')} variant="primary" size="lg" full>See Round Results →</Btn>
+            </div>
+          ) : (
+            <Btn onClick={() => { setSubmitted(true); setPhase('done'); }} variant="primary" size="lg" full
+              disabled={!Object.values(ans).some(v => v.trim())}>
+              Submit Answers
+            </Btn>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── ROUND RESULTS ─────────────────────────────────────────────────────────────
+const ROUND_PLAYERS = [
+  { name: 'Alex',   isYou: true, isHost: true,  ans: { name: 'Bethany', place: 'Belgium',  animal: 'Bee',      thing: 'Boat'  }, ok: { name: true,  place: true,  animal: true,  thing: true  }, rnd: 4, prior: 0 },
+  { name: 'Sam',    isYou: false, isHost: false, ans: { name: 'Barbara', place: 'Boston',   animal: 'Buffalo',  thing: 'Brick' }, ok: { name: true,  place: true,  animal: true,  thing: true  }, rnd: 4, prior: 0 },
+  { name: 'Jordan', isYou: false, isHost: false, ans: { name: 'Bob',     place: 'Brazil',   animal: 'Bear',     thing: 'Brush' }, ok: { name: true,  place: true,  animal: true,  thing: false }, rnd: 3, prior: 0 },
+  { name: 'Riley',  isYou: false, isHost: false, ans: { name: 'Brenda',  place: 'Bhutan',   animal: '',         thing: 'Bench' }, ok: { name: true,  place: true,  animal: false, thing: true  }, rnd: 3, prior: 0 },
+];
+
+function RoundResultsScreen({ navigate }) {
+  const sorted = [...ROUND_PLAYERS].sort((a, b) => (b.rnd + b.prior) - (a.rnd + a.prior));
+  return (
+    <div style={{ minHeight: '100vh', padding: '68px 24px 72px', maxWidth: 720, margin: '0 auto', animation: 'fadeIn 0.4s ease' }}>
+      <div style={{ textAlign: 'center', marginBottom: 40 }}>
+        <div style={{ fontSize: 12, color: C.muted, fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', marginBottom: 6 }}>Round {ROUND_NUM} Results</div>
+        <h2 style={{ fontFamily: '"Bebas Neue"', fontSize: 68, letterSpacing: '0.05em', lineHeight: 1 }}>
+          Letter <span style={{ color: C.yellow }}>{ROUND_LETTER}</span>
+        </h2>
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 13, marginBottom: 36 }}>
+        {sorted.map((p, i) => {
+          const total = p.rnd + p.prior;
+          return (
+            <div key={p.name} style={{ background: C.card, border: `1px solid ${p.isYou ? C.yellow + '35' : C.border}`, borderRadius: 17, overflow: 'hidden', animation: `slideUp 0.4s ease ${i * 0.07}s both` }}>
+              {/* Header */}
+              <div style={{ padding: '14px 20px', borderBottom: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: i === 0 ? `linear-gradient(90deg, ${C.yellow}12, transparent)` : 'transparent' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div style={{ fontFamily: '"Bebas Neue"', fontSize: 18, color: [C.yellow, C.white, C.muted, C.muted][i], width: 26 }}>{i+1}.</div>
+                  <div style={{ fontWeight: 800, fontSize: 17 }}>{p.name}{p.isYou && <span style={{ color: C.muted, fontWeight: 600, fontSize: 14, marginLeft: 6 }}>(you)</span>}</div>
+                  {p.isHost && <span style={{ fontSize: 10, color: C.yellow, fontWeight: 800, background: 'rgba(255,214,0,0.12)', padding: '2px 8px', borderRadius: 6, letterSpacing: '0.08em' }}>HOST</span>}
+                </div>
+                {/* Score formula */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 5, animation: `scoreReveal 0.4s ease ${0.2 + i * 0.07}s both` }}>
+                  <span style={{ fontFamily: '"Bebas Neue"', fontSize: 26, color: C.yellow }}>{p.rnd}</span>
+                  <span style={{ color: C.muted, fontSize: 14, fontWeight: 700 }}>+</span>
+                  <span style={{ fontFamily: '"Bebas Neue"', fontSize: 22, color: C.muted }}>{p.prior}</span>
+                  <span style={{ color: C.muted, fontSize: 14, fontWeight: 700 }}>=</span>
+                  <span style={{ fontFamily: '"Bebas Neue"', fontSize: 32, color: C.white }}>{total}</span>
+                </div>
+              </div>
+              {/* Answer grid */}
+              <div style={{ padding: '12px 20px', display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8 }}>
+                {Object.entries(p.ans).map(([cat, val]) => (
+                  <div key={cat} style={{ background: '#1A1714', borderRadius: 10, padding: '8px 12px', border: `1px solid ${p.ok[cat] ? CAT[cat] + '45' : C.dark}`, display: 'flex', alignItems: 'center', gap: 9 }}>
+                    <div style={{ width: 7, height: 7, borderRadius: '50%', background: p.ok[cat] ? CAT[cat] : C.dark, flexShrink: 0 }} />
+                    <div>
+                      <div style={{ fontSize: 10, color: CAT[cat], fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em' }}>{cat}</div>
+                      <div style={{ fontSize: 15, fontWeight: 700, color: p.ok[cat] ? C.white : C.muted }}>{val || '—'}</div>
+                    </div>
+                    {p.ok[cat] && <div style={{ marginLeft: 'auto', color: C.teal, fontSize: 12, fontWeight: 700 }}>+1</div>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+      <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
+        <Btn onClick={() => navigate('round')} variant="primary" size="lg">Next Round →</Btn>
+        <Btn onClick={() => navigate('final')} variant="ghost" size="lg">End Game</Btn>
+      </div>
+    </div>
+  );
+}
+
+// ── FINAL RESULTS ─────────────────────────────────────────────────────────────
+const FINAL_PLAYERS = [
+  { name: 'Alex',   isYou: true,  rounds: [4, 3, 4], total: 11 },
+  { name: 'Sam',    isYou: false, rounds: [4, 4, 3], total: 11 },
+  { name: 'Jordan', isYou: false, rounds: [3, 4, 4], total: 11 },
+  { name: 'Riley',  isYou: false, rounds: [3, 3, 3], total: 9  },
+];
+const CFETTI_COLORS = [C.yellow, C.coral, C.teal, '#FFFFFF', '#FF9100', '#C468FF'];
+
+function FinalResultsScreen({ navigate }) {
+  const sorted = [...FINAL_PLAYERS].sort((a, b) => b.total - a.total);
+  const top = sorted[0].total;
+  const winners = sorted.filter(p => p.total === top);
+  const confetti = useMemo(() => Array.from({ length: 65 }, (_, i) => ({
+    id: i, color: CFETTI_COLORS[i % CFETTI_COLORS.length],
+    left: Math.random() * 100, delay: Math.random() * 4,
+    dur: 3.5 + Math.random() * 3, size: 7 + Math.random() * 10,
+    round: i % 4 < 2,
+  })), []);
+
+  return (
+    <div style={{ minHeight: '100vh', position: 'relative', overflow: 'hidden', padding: '40px 24px 72px' }}>
+      {confetti.map(c => (
+        <div key={c.id} style={{ position: 'fixed', left: `${c.left}%`, top: '-12px', width: c.size, height: c.round ? c.size : c.size * 0.45, background: c.color, borderRadius: c.round ? '50%' : 2, animation: `confettiFall ${c.dur}s ease-in ${c.delay}s infinite`, pointerEvents: 'none', zIndex: 0 }} />
+      ))}
+      <div style={{ position: 'relative', zIndex: 1, maxWidth: 620, margin: '0 auto' }}>
+        {/* Winner */}
+        <div style={{ textAlign: 'center', marginBottom: 52, animation: 'winnerPop 0.8s cubic-bezier(0.34,1.56,0.64,1)' }}>
+          <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 10, background: 'rgba(255,214,0,0.1)', border: `1px solid ${C.yellow}40`, borderRadius: 100, padding: '6px 20px', marginBottom: 20 }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill={C.yellow} stroke="none"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+            <span style={{ color: C.yellow, fontWeight: 800, fontSize: 13, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+              {winners.length > 1 ? 'Co-Winners' : 'Winner'}
+            </span>
+          </div>
+          <div style={{ fontFamily: '"Bebas Neue"', fontSize: 'clamp(50px,11vw,96px)', color: C.yellow, lineHeight: 1, textShadow: `0 0 80px ${C.yellow}60` }}>
+            {winners.map(w => w.name).join(' & ')}
+          </div>
+          <div style={{ fontFamily: '"Bebas Neue"', fontSize: 38, color: C.muted, marginTop: 4 }}>
+            {top} <span style={{ fontSize: 22 }}>points</span>
+          </div>
+        </div>
+
+        {/* Scoreboard */}
+        <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 20, overflow: 'hidden', marginBottom: 36 }}>
+          <div style={{ padding: '14px 22px', borderBottom: `1px solid ${C.border}` }}>
+            <span style={{ fontSize: 12, fontWeight: 800, color: C.muted, letterSpacing: '0.1em', textTransform: 'uppercase' }}>Final Scoreboard</span>
+          </div>
+          {sorted.map((p, i) => {
+            const isWin = winners.some(w => w.name === p.name);
+            const medal = ['1st','2nd','3rd','4th'][i] || `${i+1}th`;
+            return (
+              <div key={p.name} style={{ padding: '15px 22px', borderBottom: i < sorted.length - 1 ? `1px solid ${C.border}` : 'none', display: 'flex', alignItems: 'center', gap: 14, background: isWin ? 'rgba(255,214,0,0.04)' : 'transparent', animation: `slideUp 0.4s ease ${i * 0.07}s both` }}>
+                <div style={{ fontFamily: '"Bebas Neue"', fontSize: 22, color: [C.yellow, C.white, C.muted, C.muted][i], width: 36, textAlign: 'center' }}>{medal}</div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 800, fontSize: 17 }}>{p.name} {p.isYou && <span style={{ color: C.muted, fontWeight: 600, fontSize: 14 }}>(you)</span>}</div>
+                  <div style={{ display: 'flex', gap: 6, marginTop: 4, flexWrap: 'wrap' }}>
+                    {p.rounds.map((s, r) => (
+                      <span key={r} style={{ background: C.dark, borderRadius: 6, padding: '2px 9px', fontSize: 12, fontWeight: 700, color: C.muted }}>R{r+1}: {s}</span>
+                    ))}
+                  </div>
+                </div>
+                <div style={{ fontFamily: '"Bebas Neue"', fontSize: 44, color: isWin ? C.yellow : C.white }}>{p.total}</div>
+              </div>
+            );
+          })}
+        </div>
+
+        <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
+          <Btn onClick={() => navigate('create')} variant="primary" size="lg">Play Again</Btn>
+          <Btn onClick={() => navigate('home')} variant="ghost" size="lg">Home</Btn>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── APP ───────────────────────────────────────────────────────────────────────
+const NAV = [
+  { k: 'home', l: 'Home' }, { k: 'rules', l: 'Rules' },
+  { k: 'create', l: 'Create' }, { k: 'join', l: 'Join' },
+  { k: 'lobby-host', l: 'Lobby (Host)' }, { k: 'lobby-player', l: 'Lobby (Player)' },
+  { k: 'round', l: 'In Round' }, { k: 'results', l: 'Results' },
+  { k: 'final', l: 'Final' },
+];
+
+function App() {
+  const [screen, setScreen] = useState('home');
+  const [game, setGame] = useState(null);
+  const [navOpen, setNavOpen] = useState(false);
+
+  function navigate(to) { setScreen(to); }
+
+  const views = {
+    'home':         <HomeScreen navigate={navigate} />,
+    'rules':        <RulesScreen navigate={navigate} />,
+    'create':       <CreateGameScreen navigate={navigate} setGame={setGame} />,
+    'join':         <JoinGameScreen navigate={navigate} />,
+    'lobby-host':   <LobbyScreen navigate={navigate} game={game} isHost={true} />,
+    'lobby-player': <LobbyScreen navigate={navigate} game={game} isHost={false} />,
+    'round':        <InRoundScreen key={Date.now()} navigate={navigate} game={game} />,
+    'results':      <RoundResultsScreen navigate={navigate} />,
+    'final':        <FinalResultsScreen navigate={navigate} />,
+  };
+
+  return (
+    <div>
+      <div key={screen} style={{ animation: 'fadeIn 0.22s ease' }}>
+        {views[screen] || views['home']}
+      </div>
+
+      {/* Prototype nav */}
+      <div style={{ position: 'fixed', bottom: 16, left: '50%', transform: 'translateX(-50%)', zIndex: 9999 }}>
+        {navOpen ? (
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, background: 'rgba(25,22,18,0.97)', border: `1px solid ${C.border}`, borderRadius: 16, padding: '10px 12px', backdropFilter: 'blur(16px)', justifyContent: 'center', maxWidth: '92vw' }}>
+            {NAV.map(n => (
+              <button key={n.k} onClick={() => { navigate(n.k); setNavOpen(false); }} style={{ background: screen === n.k ? C.yellow : 'rgba(255,255,255,0.05)', color: screen === n.k ? '#1A1714' : C.muted, border: 'none', borderRadius: 8, padding: '5px 12px', fontFamily: 'inherit', fontWeight: 700, fontSize: 12, cursor: 'pointer', transition: 'all 0.12s', whiteSpace: 'nowrap' }}>{n.l}</button>
+            ))}
+            <button onClick={() => setNavOpen(false)} style={{ background: 'rgba(255,255,255,0.05)', color: C.muted, border: 'none', borderRadius: 8, padding: '5px 10px', fontFamily: 'inherit', fontWeight: 700, fontSize: 12, cursor: 'pointer' }}>✕</button>
+          </div>
+        ) : (
+          <button onClick={() => setNavOpen(true)} style={{ background: 'rgba(25,22,18,0.92)', border: `1px solid ${C.border}`, borderRadius: 100, padding: '8px 18px', color: C.muted, fontFamily: 'inherit', fontWeight: 700, fontSize: 12, cursor: 'pointer', backdropFilter: 'blur(12px)', display: 'flex', alignItems: 'center', gap: 7 }}>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/></svg>
+            Prototype Nav
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
